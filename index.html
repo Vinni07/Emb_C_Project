@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microcontroller Bluetooth Control</title>
+</head>
+<body>
+    <h1>Microcontroller Bluetooth Control</h1>
+    <button id="connectButton">Connect</button>
+    <div id="controls" style="display:none;">
+        <button onclick="sendCommand('a')">Bulb ON</button>
+        <button onclick="sendCommand('b')">Bulb OFF</button>
+        <button onclick="sendCommand('c')">Fan ON</button>
+        <button onclick="sendCommand('d')">Fan OFF</button>
+        <button onclick="sendCommand('e')">Both ON</button>
+        <button onclick="sendCommand('f')">Both OFF</button>
+        <button onclick="sendCommand('g')">Return to Manual Mode</button>
+    </div>
+    <script>
+        let bluetoothDevice;
+        let uartService;
+        const uartServiceUUID = '00001101-0000-1000-8000-00805f9b34fb'; // This is the SPP (Serial Port Profile) UUID for Bluetooth
+
+        document.getElementById('connectButton').addEventListener('click', async () => {
+            try {
+                bluetoothDevice = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: [uartServiceUUID] }]
+                });
+                const server = await bluetoothDevice.gatt.connect();
+                uartService = await server.getPrimaryService(uartServiceUUID);
+                document.getElementById('controls').style.display = 'block';
+            } catch (error) {
+                console.log('Error connecting to Bluetooth device:', error);
+            }
+        });
+
+        async function sendCommand(command) {
+            if (!uartService) return;
+
+            const characteristic = await uartService.getCharacteristic('00002a37-0000-1000-8000-00805f9b34fb');
+            const encoder = new TextEncoder();
+            await characteristic.writeValue(encoder.encode(command));
+        }
+    </script>
+</body>
+</html>
